@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobrinha</title>
+  <style>
+    body { text-align: center; background: #000; color: #fff; margin: 0; font-family: Arial; }
+    canvas { display: block; margin: 20px auto; background: #111; touch-action: none; }
+    #controls { display: flex; justify-content: center; margin-top: 10px; }
+    .btn { width: 50px; height: 50px; background: #333; color: #fff; border: none; margin: 5px; font-size: 20px; cursor: pointer; }
+    .btn:active { background: #555; }
+    #score { font-size: 20px; margin: 10px 0; }
+    #message { color: red; font-size: 20px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Cobrinha</h1>
+  <p id="score">Pontuação: 0</p>
+  <canvas id="game" width="400" height="400"></canvas>
+  <div id="controls">
+    <div>
+      <button class="btn" onclick="changeDir('ArrowUp')">↑</button><br>
+      <button class="btn" onclick="changeDir('ArrowLeft')">←</button>
+      <button class="btn" onclick="changeDir('ArrowRight')">→</button><br>
+      <button class="btn" onclick="changeDir('ArrowDown')">↓</button>
+    </div>
+  </div>
+  <p id="message"></p>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const message = document.getElementById('message');
+    let snake = [{ x: 200, y: 200 }];
+    let food = { x: randomPos(), y: randomPos() };
+    let dir = { x: 0, y: -20 }; // Direção inicial
+    let gameOver = false;
+    let score = 0;
+
+    // Gera posições aleatórias para comida
+    function randomPos() {
+      return Math.floor(Math.random() * 20) * 20;
+    }
+
+    // Atualiza a pontuação
+    function updateScore() {
+      scoreEl.textContent = `Pontuação: ${score}`;
+    }
+
+    // Loop principal do jogo
+    function gameLoop() {
+      if (gameOver) return;
+
+      // Atualiza a posição da cabeça
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+      // Verifica colisão com bordas ou corpo
+      if (
+        head.x < 0 || head.y < 0 || 
+        head.x >= 400 || head.y >= 400 || 
+        snake.some(segment => segment.x === head.x && segment.y === head.y)
+      ) {
+        gameOver = true;
+        message.textContent = 'Game Over! Pressione qualquer tecla ou toque para reiniciar.';
+        document.addEventListener('keydown', restartGame);
+        canvas.addEventListener('click', restartGame);
+        return;
+      }
+
+      // Verifica se comeu a comida
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        updateScore();
+        food = { x: randomPos(), y: randomPos() };
+      } else {
+        snake.pop();
+      }
+
+      snake.unshift(head);
+      ctx.clearRect(0, 0, 400, 400);
+      ctx.fillStyle = 'red';
+      ctx.fillRect(food.x, food.y, 20, 20);
+      ctx.fillStyle = 'green';
+      snake.forEach(segment => ctx.fillRect(segment.x, segment.y, 20, 20));
+    }
+
+    // Controla a direção da cobra com teclado ou botões
+    function changeDir(key) {
+      if (gameOver) return;
+      if (key === 'ArrowUp' && dir.y === 0) dir = { x: 0, y: -20 };
+      else if (key === 'ArrowDown' && dir.y === 0) dir = { x: 0, y: 20 };
+      else if (key === 'ArrowRight' && dir.x === 0) dir = { x: 20, y: 0 };
+      else if (key === 'ArrowLeft' && dir.x === 0) dir = { x: -20, y: 0 };
+    }
+
+    // Reinicia o jogo
+    function restartGame() {
+      snake = [{ x: 200, y: 200 }];
+      food = { x: randomPos(), y: randomPos() };
+      dir = { x: 0, y: -20 }; // Reinicia com movimento para cima
+      gameOver = false;
+      score = 0;
+      updateScore();
+      message.textContent = '';
+      document.removeEventListener('keydown', restartGame);
+      canvas.removeEventListener('click', restartGame);
+    }
+
+    // Adiciona eventos do teclado
+    document.addEventListener('keydown', (event) => {
+      if (!gameOver) changeDir(event.key);
+      else restartGame();
+    });
+
+    // Define o intervalo com a nova velocidade
+    setInterval(gameLoop, 150);
+  </script>
+</body>
+</html>
